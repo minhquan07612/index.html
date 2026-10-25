@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Công c? Tính Ti?n Ði?n Gia Ðình</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js for visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Font Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col justify-between">
+
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-blue-600 to-indigo-700 text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center">
+            <div class="flex items-center space-x-3 mb-4 md:mb-0">
+                <div class="bg-white/10 p-3 rounded-xl backdrop-blur-sm">
+                    <i class="fa-solid fa-bolt-lightning text-yellow-300 text-2xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold tracking-tight">Tính Ti?n Ði?n Gia Ðình</h1>
+                    <p class="text-blue-100 text-sm">Qu?n lý công su?t, di?n nang tiêu th? và u?c tính ti?n di?n b?c thang chu?n xác</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-3">
+                <button onclick="openModal('addDeviceModal')" class="bg-amber-400 hover:bg-amber-500 text-slate-900 font-semibold px-4 py-2.5 rounded-xl shadow transition flex items-center space-x-2 text-sm">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>Thêm thi?t b?</span>
+                </button>
+                <button onclick="resetData()" class="bg-white/10 hover:bg-white/20 text-white font-medium px-3.5 py-2.5 rounded-xl backdrop-blur-sm transition text-sm" title="Ð?t l?i d? li?u m?u">
+                    <i class="fa-solid fa-rotate-right"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8 flex-grow w-full space-y-8">
+
+        <!-- Notification Banner / Message Box -->
+        <div id="toastMessage" class="hidden bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded-xl shadow-sm flex items-center justify-between transition-all">
+            <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-circle-check text-emerald-600"></i>
+                <span id="toastText" class="text-sm font-medium">Thao tác thành công!</span>
+            </div>
+            <button onclick="hideToast()" class="text-emerald-600 hover:text-emerald-800 text-sm font-bold">&times;</button>
+        </div>
+
+        <!-- Summary Cards Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center space-x-4">
+                <div class="bg-blue-50 text-blue-600 p-4 rounded-xl">
+                    <i class="fa-solid fa-plug text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">T?ng thi?t b?</p>
+                    <h3 id="statTotalDevices" class="text-2xl font-bold text-slate-800 mt-1">0</h3>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center space-x-4">
+                <div class="bg-emerald-50 text-emerald-600 p-4 rounded-xl">
+                    <i class="fa-solid fa-chart-line text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Tiêu th? / Ngày</p>
+                    <h3 id="statKWhDay" class="text-2xl font-bold text-slate-800 mt-1">0 kWh</h3>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center space-x-4">
+                <div class="bg-amber-50 text-amber-600 p-4 rounded-xl">
+                    <i class="fa-solid fa-calendar-days text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Tiêu th? / Tháng (30 ngày)</p>
+                    <h3 id="statKWhMonth" class="text-2xl font-bold text-slate-800 mt-1">0 kWh</h3>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center space-x-4">
+                <div class="bg-rose-50 text-rose-600 p-4 rounded-xl">
+                    <i class="fa-solid fa-sack-dollar text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">U?c tính ti?n di?n (Chua VAT)</p>
+                    <h3 id="statTotalMoney" class="text-2xl font-bold text-rose-600 mt-1">0 d</h3>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tariff Selector & Custom Options -->
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center space-x-3 w-full md:w-auto">
+                <div class="bg-indigo-50 text-indigo-600 p-3 rounded-xl">
+                    <i class="fa-solid fa-file-invoice-dollar"></i>
+                </div>
+                <div>
+                    <label for="tariffSelect" class="block text-sm font-semibold text-slate-700">Bi?u giá di?n sinh ho?t</label>
+                    <select id="tariffSelect" onchange="changeTariffType()" class="mt-1 bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-xl focus:ring-indigo-500 focus:border-indigo-500 block w-full p-2.5">
+                        <option value="bacThang">Bi?u giá b?c thang m?i nh?t (EVN)</option>
+                        <option value="flat">Ðon giá c? d?nh tùy ch?nh</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="flatRateContainer" class="hidden items-center space-x-3 w-full md:w-auto">
+                <div>
+                    <label for="flatRateInput" class="block text-sm font-semibold text-slate-700">Ðon giá (VNÐ/kWh)</label>
+                    <input type="number" id="flatRateInput" value="2500" oninput="calculate()" class="mt-1 bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-xl focus:ring-indigo-500 focus:border-indigo-500 block w-full p-2.5">
+                </div>
+            </div>
+
+            <div class="text-xs text-slate-500 text-right md:text-left">
+                <p><span class="font-semibold text-slate-700">* Luu ý:</span> Giá di?n b?c thang áp d?ng theo bi?u giá sinh ho?t 6 b?c hi?n hành (chua g?m 10% VAT).</p>
+            </div>
+        </div>
+
+        <!-- Main Content Grid: Devices Table & Analytics/Charts -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- Left 2 Cols: Device List Table -->
+            <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col">
+                <div class="p-6 border-b border-slate-100 flex justify-between items-center">
+                    <h2 class="text-lg font-bold text-slate-800 flex items-center space-x-2">
+                        <i class="fa-solid fa-list-check text-indigo-600"></i>
+                        <span>Danh sách thi?t b? di?n</span>
+                    </h2>
+                    <button onclick="openModal('addDeviceModal')" class="text-indigo-600 hover:text-indigo-800 text-sm font-semibold flex items-center space-x-1">
+                        <i class="fa-solid fa-plus text-xs"></i>
+                        <span>Thêm m?i</span>
+                    </button>
+                </div>
+
+                <div class="overflow-x-auto flex-grow">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 text-slate-500 uppercase text-xs tracking-wider border-b border-slate-100">
+                                <th class="py-3.5 px-6 font-semibold">Tên thi?t b?</th>
+                                <th class="py-3.5 px-4 font-semibold text-center">Công su?t</th>
+                                <th class="py-3.5 px-4 font-semibold text-center">SL</th>
+                                <th class="py-3.5 px-4 font-semibold text-center">Th?i gian/Ngày</th>
+                                <th class="py-3.5 px-4 font-semibold text-right">kWh/Tháng</th>
+                                <th class="py-3.5 px-6 font-semibold text-center">Hành d?ng</th>
+                            </tr>
+                        </thead>
+                        <tbody id="deviceTableBody" class="divide-y divide-slate-100 text-sm text-slate-700">
+                            <!-- Populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Empty State -->
+                <div id="emptyState" class="hidden p-12 text-center flex flex-col items-center justify-center">
+                    <div class="bg-slate-100 text-slate-400 p-4 rounded-full mb-3 text-xl">
+                        <i class="fa-solid fa-box-open"></i>
+                    </div>
+                    <p class="text-slate-600 font-medium">Chua có thi?t b? nào trong danh sách.</p>
+                    <p class="text-slate-400 text-xs mt-1">Hãy b?m "Thêm thi?t b?" d? b?t d?u tính toán.</p>
+                </div>
+            </div>
+
+            <!-- Right 1 Col: Visual Chart & Recommendations -->
+            <div class="space-y-8 flex flex-col">
+                
+                <!-- Chart Card -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col">
+                    <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center space-x-2">
+                        <i class="fa-solid fa-chart-pie text-indigo-600"></i>
+                        <span>T? tr?ng tiêu th? di?n</span>
+                    </h3>
+                    <div class="relative w-full h-64 flex items-center justify-center">
+                        <canvas id="consumptionChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Tariff Breakdown Card -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                    <h3 class="text-lg font-bold text-slate-800 mb-3 flex items-center space-x-2">
+                        <i class="fa-solid fa-receipt text-indigo-600"></i>
+                        <span>Chi ti?t b?c thang ti?n di?n</span>
+                    </h3>
+                    <div id="tariffBreakdownContainer" class="space-y-2.5 text-sm">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+
+                <!-- Energy Saving Tips Card -->
+                <div class="bg-gradient-to-br from-emerald-50 to-teal-50 p-6 rounded-2xl border border-emerald-100 shadow-sm">
+                    <h3 class="text-lg font-bold text-emerald-900 mb-3 flex items-center space-x-2">
+                        <i class="fa-solid fa-lightbulb text-amber-500"></i>
+                        <span>G?i ý ti?t ki?m di?n</span>
+                    </h3>
+                    <ul id="savingTipsList" class="space-y-2 text-sm text-emerald-800">
+                        <!-- Populated dynamically -->
+                    </ul>
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 mt-12 py-6 text-center text-slate-500 text-sm">
+        <p>Công c? Tính Ti?n Ði?n Gia Ðình &copy; 2026 - H? tr? qu?n lý nang lu?ng thông minh</p>
+    </footer>
+
+    <!-- Add/Edit Device Modal -->
+    <div id="deviceModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl shadow-xl max-w-md w-full overflow-hidden transform transition-all">
+            <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <h3 id="modalTitle" class="text-lg font-bold text-slate-800">Thêm thi?t b? m?i</h3>
+                <button onclick="closeModal('deviceModal')" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+            </div>
+            <form id="deviceForm" onsubmit="saveDevice(event)" class="p-6 space-y-4">
+                <input type="hidden" id="deviceId">
+                
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Tên thi?t b?</label>
+                    <input type="text" id="deviceName" required placeholder="Ví d?: Ði?u hòa nhi?t d?, T? l?nh..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Công su?t (Watts)</label>
+                        <input type="number" id="devicePower" min="1" required placeholder="Ví d?: 1200" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">S? lu?ng</label>
+                        <input type="number" id="deviceQuantity" min="1" value="1" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Th?i gian s? d?ng</label>
+                        <input type="number" id="deviceTime" step="0.1" min="0.01" required placeholder="Ví d?: 8" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Ðon v? th?i gian</label>
+                        <select id="deviceTimeUnit" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                            <option value="hours">Gi? / ngày</option>
+                            <option value="minutes">Phút / ngày</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="pt-4 flex space-x-3">
+                    <button type="button" onclick="closeModal('deviceModal')" class="w-1/2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-3 rounded-xl transition text-sm">H?y</button>
+                    <button type="submit" class="w-1/2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-xl transition text-sm shadow-md shadow-indigo-200">Luu thi?t b?</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Custom Alert / Confirm Box Modal -->
+    <div id="confirmModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 text-center space-y-4">
+            <div class="bg-rose-50 text-rose-600 w-12 h-12 rounded-full flex items-center justify-center mx-auto text-xl">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <h3 id="confirmTitle" class="text-lg font-bold text-slate-800">Xác nh?n xóa</h3>
+            <p id="confirmText" class="text-sm text-slate-600">B?n có ch?c ch?n mu?n xóa thi?t b? này kh?i danh sách?</p>
+            <div class="flex space-x-3 pt-2">
+                <button onclick="closeConfirmModal()" class="w-1/2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2.5 rounded-xl transition text-sm">H?y</button>
+                <button id="confirmBtn" class="w-1/2 bg-rose-600 hover:bg-rose-700 text-white font-semibold py-2.5 rounded-xl transition text-sm shadow-md shadow-rose-200">Xóa</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // Default Sample Devices
+        const defaultDevices = [
+            { id: 1, name: 'Ði?u hòa nhi?t d? (Inverter 1HP)', power: 900, quantity: 1, time: 8, unit: 'hours' },
+            { id: 2, name: 'T? l?nh (Inverter 300L)', power: 120, quantity: 1, time: 24, unit: 'hours' },
+            { id: 3, name: 'Máy gi?t c?a tru?c', power: 2000, quantity: 1, time: 0.5, unit: 'hours' },
+            { id: 4, name: 'Bình nóng l?nh', power: 2500, quantity: 1, time: 1, unit: 'hours' },
+            { id: 5, name: 'Ðèn LED chi?u sáng', power: 15, quantity: 8, time: 5, unit: 'hours' },
+            { id: 6, name: 'Tivi LED 55 inch', power: 120, quantity: 1, time: 4, unit: 'hours' },
+            { id: 7, name: 'N?i com di?n', power: 700, quantity: 1, time: 0.75, unit: 'hours' }
+        ];
+
+        let devices = JSON.parse(localStorage.getItem('electricity_devices')) || defaultDevices;
+        let chartInstance = null;
+        let deleteTargetId = null;
+
+        // Vietnamese EVN Tiered Tariff (Latest sinh ho?t 6 b?c, chua VAT)
+        // B?c 1: 0 - 50 kWh: 1893 d
+        // B?c 2: 51 - 100 kWh: 1956 d
+        // B?c 3: 101 - 200 kWh: 2271 d
+        // B?c 4: 201 - 300 kWh: 2860 d
+        // B?c 5: 301 - 400 kWh: 3197 d
+        // B?c 6: 401 kWh tr? lên: 3302 d
+        const evnTiers = [
+            { limit: 50, rate: 1893, name: 'B?c 1 (0 - 50 kWh)' },
+            { limit: 50, rate: 1956, name: 'B?c 2 (51 - 100 kWh)' },
+            { limit: 100, rate: 2271, name: 'B?c 3 (101 - 200 kWh)' },
+            { limit: 100, rate: 2860, name: 'B?c 4 (201 - 300 kWh)' },
+            { limit: 100, rate: 3197, name: 'B?c 5 (301 - 400 kWh)' },
+            { limit: Infinity, rate: 3302, name: 'B?c 6 (T? 401 kWh tr? lên)' }
+        ];
+
+        // Initialize application on load
+        window.onload = function() {
+            calculate();
+        };
+
+        function saveData() {
+            localStorage.setItem('electricity_devices', JSON.stringify(devices));
+        }
+
+        function resetData() {
+            devices = JSON.parse(JSON.stringify(defaultDevices));
+            saveData();
+            calculate();
+            showToast('Ðã khôi ph?c d? li?u m?u thành công!');
+        }
+
+        function changeTariffType() {
+            const type = document.getElementById('tariffSelect').value;
+            const flatContainer = document.getElementById('flatRateContainer');
+            if (type === 'flat') {
+                flatContainer.classList.remove('hidden');
+                flatContainer.classList.add('flex');
+            } else {
+                flatContainer.classList.remove('flex');
+                flatContainer.classList.add('hidden');
+            }
+            calculate();
+        }
+
+        // Core calculation function
+        function calculate() {
+            let totalKWhMonth = 0;
+            let totalDevicesCount = 0;
+            const tbody = document.getElementById('deviceTableBody');
+            tbody.innerHTML = '';
+
+            const emptyState = document.getElementById('emptyState');
+
+            if (devices.length === 0) {
+                emptyState.classList.remove('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+            }
+
+            devices.forEach((device) => {
+                totalDevicesCount += device.quantity;
+                
+                // Calculate hours per day
+                let hoursPerDay = device.unit === 'minutes' ? device.time / 60 : device.time;
+                let kWhPerDay = (device.power * device.quantity * hoursPerDay) / 1000;
+                let kWhPerMonth = kWhPerDay * 30;
+                totalKWhMonth += kWhPerMonth;
+
+                // Format display time
+                let timeDisplay = device.unit === 'minutes' ? `${device.time} phút` : `${device.time} gi?`;
+
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50/80 transition-colors';
+                tr.innerHTML = `
+                    <td class="py-4 px-6 font-medium text-slate-800">${escapeHtml(device.name)}</td>
+                    <td class="py-4 px-4 text-center">${device.power.toLocaleString()} W</td>
+                    <td class="py-4 px-4 text-center">${device.quantity}</td>
+                    <td class="py-4 px-4 text-center">${timeDisplay}</td>
+                    <td class="py-4 px-4 text-right font-semibold text-indigo-600">${kWhPerMonth.toFixed(2)} kWh</td>
+                    <td class="py-4 px-6 text-center">
+                        <div class="flex items-center justify-center space-x-2">
+                            <button onclick="editDevice(${device.id})" class="p-1.5 text-slate-400 hover:text-indigo-600 bg-slate-100 hover:bg-indigo-50 rounded-lg transition" title="S?a">
+                                <i class="fa-solid fa-pen text-xs"></i>
+                            </button>
+                            <button onclick="confirmDelete(${device.id})" class="p-1.5 text-slate-400 hover:text-rose-600 bg-slate-100 hover:bg-rose-50 rounded-lg transition" title="Xóa">
+                                <i class="fa-solid fa-trash text-xs"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            let kWhPerDayTotal = totalKWhMonth / 30;
+            
+            // Update Summary Stats
+            document.getElementById('statTotalDevices').innerText = totalDevicesCount;
+            document.getElementById('statKWhDay').innerText = `${kWhPerDayTotal.toFixed(2)} kWh`;
+            document.getElementById('statKWhMonth').innerText = `${totalKWhMonth.toFixed(2)} kWh`;
+
+            // Calculate money based on tariff
+            const tariffType = document.getElementById('tariffSelect').value;
+            let totalMoney = 0;
+            let breakdownHTML = '';
+
+            if (tariffType === 'flat') {
+                const flatRate = parseFloat(document.getElementById('flatRateInput').value) || 0;
+                totalMoney = totalKWhMonth * flatRate;
+                breakdownHTML = `
+                    <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                        <span class="text-slate-600">Ðon giá c? d?nh (${flatRate.toLocaleString()} d/kWh)</span>
+                        <span class="font-semibold text-slate-800">${totalMoney.toLocaleString('vi-VN', {maximumFractionDigits: 0})} d</span>
+                    </div>
+                `;
+            } else {
+                // Tiered EVN Calculation
+                let remainingKWh = totalKWhMonth;
+                let calculatedMoney = 0;
+
+                evnTiers.forEach((tier) => {
+                    if (remainingKWh <= 0) return;
+                    let kWhInThisTier = Math.min(remainingKWh, tier.limit);
+                    let costInThisTier = kWhInThisTier * tier.rate;
+                    calculatedMoney += costInThisTier;
+                    remainingKWh -= kWhInThisTier;
+
+                    breakdownHTML += `
+                        <div class="flex justify-between items-center py-1.5 border-b border-slate-100 text-xs">
+                            <span class="text-slate-600">${tier.name} (<span class="font-medium">${kWhInThisTier.toFixed(1)} kWh</span> x ${tier.rate.toLocaleString()}d)</span>
+                            <span class="font-semibold text-slate-800">${costInThisTier.toLocaleString('vi-VN', {maximumFractionDigits: 0})} d</span>
+                        </div>
+                    `;
+                });
+                totalMoney = calculatedMoney;
+            }
+
+            document.getElementById('statTotalMoney').innerText = `${totalMoney.toLocaleString('vi-VN', {maximumFractionDigits: 0})} d`;
+            document.getElementById('tariffBreakdownContainer').innerHTML = breakdownHTML;
+
+            // Update Chart and Suggestions
+            updateChart();
+            updateSuggestions();
+            saveData();
+        }
+
+        function updateChart() {
+            const ctx = document.getElementById('consumptionChart').getContext('2d');
+            
+            // Sort devices by consumption descending
+            let sortedDevices = [...devices].map(d => {
+                let h = d.unit === 'minutes' ? d.time / 60 : d.time;
+                let kwh = (d.power * d.quantity * h * 30) / 1000;
+                return { name: d.name, kwh: kwh };
+            }).sort((a, b) => b.kwh - a.kwh);
+
+            // Take top 5 and group others if any
+            let labels = [];
+            let data = [];
+            let backgroundColors = ['#4f46e5', '#0ea5e9', '#10b981', '#f59e0b', '#f43f5e', '#8b5cf6', '#64748b'];
+
+            if (sortedDevices.length <= 5) {
+                labels = sortedDevices.map(d => d.name);
+                data = sortedDevices.map(d => d.kwh);
+            } else {
+                let top5 = sortedDevices.slice(0, 5);
+                labels = top5.map(d => d.name);
+                data = top5.map(d => d.kwh);
+                
+                let othersSum = sortedDevices.slice(5).reduce((sum, d) => sum + d.kwh, 0);
+                labels.push('Thi?t b? khác');
+                data.push(othersSum);
+            }
+
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+
+            chartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: backgroundColors.slice(0, labels.length),
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                boxWidth: 12,
+                                font: { size: 11, family: 'Inter' }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    let value = context.raw || 0;
+                                    return ` ${label}: ${value.toFixed(2)} kWh/tháng`;
+                                }
+                            }
+                        }
+                    },
+                    cutout: '65%'
+                }
+            });
+        }
+
+        function updateSuggestions() {
+            const listEl = document.getElementById('savingTipsList');
+            let tips = [];
+
+            // Analyze high consumption devices
+            let heavyDevices = devices.map(d => {
+                let h = d.unit === 'minutes' ? d.time / 60 : d.time;
+                let kwh = (d.power * d.quantity * h * 30) / 1000;
+                return { name: d.name, kwh: kwh, power: d.power };
+            }).sort((a, b) => b.kwh - a.kwh);
+
+            if (heavyDevices.length > 0) {
+                let top = heavyDevices[0];
+                tips.push(`<li class="flex items-start space-x-2"><i class="fa-solid fa-circle-check text-emerald-600 mt-1"></i><span><strong class="font-semibold">${top.name}</strong> dang là thi?t b? tiêu th? di?n nhi?u nh?t (${top.kwh.toFixed(1)} kWh/tháng). Hãy cân nh?c s? d?ng ti?t ki?m hon ho?c b?o du?ng d?nh k?.</span></li>`);
+            }
+
+            // Check for air conditioner or heater
+            let hasCooling = devices.some(d => d.name.toLowerCase().includes('di?u hòa') || d.name.toLowerCase().includes('máy l?nh'));
+            if (hasCooling) {
+                tips.push(`<li class="flex items-start space-x-2"><i class="fa-solid fa-circle-check text-emerald-600 mt-1"></i><span>Ð?t nhi?t d? di?u hòa t? <strong>26°C - 28°C</strong> k?t h?p qu?t gió giúp ti?t ki?m t?i 20-30% di?n nang tiêu th? cho làm mát.</span></li>`);
+            }
+
+            tips.push(`<li class="flex items-start space-x-2"><i class="fa-solid fa-circle-check text-emerald-600 mt-1"></i><span>Rút phích c?m các thi?t b? di?n t? (tivi, lò vi sóng, s?c di?n tho?i) khi không s? d?ng d? tránh dòng di?n ch? tiêu hao ?n.</span></li>`);
+            tips.push(`<li class="flex items-start space-x-2"><i class="fa-solid fa-circle-check text-emerald-600 mt-1"></i><span>Uu tiên s? d?ng các thi?t b? d?t chu?n nhãn nang lu?ng 5 sao ho?c công ngh? Inverter ti?t ki?m di?n.</span></li>`);
+
+            listEl.innerHTML = tips.join('');
+        }
+
+        // Modal Controls
+        function openModal(modalId, isEdit = false) {
+            document.getElementById(modalId).classList.remove('hidden');
+            if (!isEdit && modalId === 'deviceModal') {
+                document.getElementById('modalTitle').innerText = 'Thêm thi?t b? m?i';
+                document.getElementById('deviceForm').reset();
+                document.getElementById('deviceId').value = '';
+            }
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
+
+        function saveDevice(event) {
+            event.preventDefault();
+            const id = document.getElementById('deviceId').value;
+            const name = document.getElementById('deviceName').value;
+            const power = parseFloat(document.getElementById('devicePower').value);
+            const quantity = parseInt(document.getElementById('deviceQuantity').value);
+            const time = parseFloat(document.getElementById('deviceTime').value);
+            const unit = document.getElementById('deviceTimeUnit').value;
+
+            if (id) {
+                // Edit existing
+                const index = devices.findIndex(d => d.id == id);
+                if (index !== -1) {
+                    devices[index] = { id: parseInt(id), name, power, quantity, time, unit };
+                }
+                showToast('C?p nh?t thi?t b? thành công!');
+            } else {
+                // Add new
+                const newId = devices.length > 0 ? Math.max(...devices.map(d => d.id)) + 1 : 1;
+                devices.push({ id: newId, name, power, quantity, time, unit });
+                showToast('Thêm thi?t b? thành công!');
+            }
+
+            closeModal('deviceModal');
+            calculate();
+        }
+
+        function editDevice(id) {
+            const device = devices.find(d => d.id == id);
+            if (!device) return;
+
+            document.getElementById('modalTitle').innerText = 'Ch?nh s?a thi?t b?';
+            document.getElementById('deviceId').value = device.id;
+            document.getElementById('deviceName').value = device.name;
+            document.getElementById('devicePower').value = device.power;
+            document.getElementById('deviceQuantity').value = device.quantity;
+            document.getElementById('deviceTime').value = device.time;
+            document.getElementById('deviceTimeUnit').value = device.unit;
+
+            openModal('deviceModal', true);
+        }
+
+        function confirmDelete(id) {
+            deleteTargetId = id;
+            document.getElementById('confirmModal').classList.remove('hidden');
+        }
+
+        function closeConfirmModal() {
+            deleteTargetId = null;
+            document.getElementById('confirmModal').classList.add('hidden');
+        }
+
+        document.getElementById('confirmBtn').onclick = function() {
+            if (deleteTargetId !== null) {
+                devices = devices.filter(d => d.id != deleteTargetId);
+                closeConfirmModal();
+                calculate();
+                showToast('Ðã xóa thi?t b? thành công!');
+            }
+        };
+
+        function showToast(message) {
+            const toast = document.getElementById('toastMessage');
+            document.getElementById('toastText').innerText = message;
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3000);
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>
